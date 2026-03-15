@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         WeLearnans
-// @version      1.1
-// @description  简易的welearn填充答案
-// @author       hap
+// @name         Welearnans
+// @version      1.2
+// @description  A simple WElearn auto-answer-filling script
+// @author       hap,Kaczev
 // @match        *://welearn.sflep.com/*
 // @icon         https://welearn.sflep.com/favicon.ico
 // ==/UserScript==
@@ -42,6 +42,36 @@
         el.dispatchEvent(new Event('input', { bubbles: true }));
             } catch (e) {}
     };
+
+    const removeAnswersMayVary = (doc) => {
+        try {
+            const root = doc.body || doc;
+            const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+                acceptNode: (node) => node.nodeValue && node.nodeValue.includes('(Answers may vary.)') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
+            }, false);
+            const nodes = [];
+            let n;
+            while (n = walker.nextNode()) nodes.push(n);
+            nodes.forEach(node => {
+                node.nodeValue = node.nodeValue.replace(/\(Answers may vary\.[)\s]*/g, '').replace(/\(Answers may vary\)\s*/g, '');
+            });
+        } catch (e) {}
+    };
+
+    const removeAnswersMayVaryAll = () => {
+        try {
+            removeAnswersMayVary(document);
+            document.querySelectorAll('iframe').forEach(iframe => {
+                try {
+                    if (iframe.contentDocument) removeAnswersMayVary(iframe.contentDocument);
+                } catch (e) {}
+            });
+        } catch (e) {}
+    };
+
+    // run once now and then periodically to ensure the sentence is removed
+    removeAnswersMayVaryAll();
+    setInterval(removeAnswersMayVaryAll, 2000);
     
     const triggerCompleteEvents = (el) => {
       try {
